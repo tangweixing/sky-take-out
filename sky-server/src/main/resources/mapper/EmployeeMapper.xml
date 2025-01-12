@@ -32,7 +32,7 @@
             <if test="idNumber!=null and idNumber!=''">
                 id_number=#{idNumber},
         </if>
-            <if test="updateTime!=null and updateTime!=''">
+            <if test="updateTime!=null ">
                 update_time=#{updateTime},
             </if>
             <if test="updateUser!=null">
