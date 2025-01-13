@@ -8,6 +8,6 @@ sky:
     password: 123456
   alioss:
     endpoint: #oss-cn-heyuan.aliyuncs.com
-    access-key-secret: #lK7IDBMKGdYqlUUfrZXqLnth7b3dTc
-    access-key-id: #LTAI5tBYh3WdcgJddszYmxNB
+    access-key-secret: 
+    access-key-id: 
     bucket-name: #tang-wei
