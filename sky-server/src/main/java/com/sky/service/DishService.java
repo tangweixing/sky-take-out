@@ -36,4 +36,8 @@ public interface DishService {
         修改菜品
          */
     void updateWithFlavor(DishDTO dishDTO);
+/*
+通过菜品分类查菜品列表
+ */
+    List<Dish> queryByCategoryId(Long categoryId);
 }

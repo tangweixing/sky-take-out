@@ -28,6 +28,7 @@ public class DishController {
     @Autowired
     private DishService dishService;
 
+
     /*
     新增菜品
     @param dishDTO
@@ -85,5 +86,13 @@ public class DishController {
         log.info("修改菜品：{}",dishDTO);
         dishService.updateWithFlavor(dishDTO);
         return Result.success();
+    }
+    @GetMapping("/list")
+    @ApiOperation("获得菜品类菜品")
+    public Result<List<Dish>> list(@RequestParam Long categoryId){
+        System.out.println("开始");
+        log.info("加载菜品类id:{}",categoryId);
+        List<Dish> dishes= dishService.queryByCategoryId(categoryId);
+        return Result.success(dishes);
     }
 }
