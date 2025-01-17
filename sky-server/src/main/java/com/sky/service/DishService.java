@@ -40,4 +40,10 @@ public interface DishService {
 通过菜品分类查菜品列表
  */
     List<Dish> queryByCategoryId(Long categoryId);
+    /**
+     * 条件查询菜品和口味
+     * @param dish
+     * @return
+     */
+    List<DishVO> listWithFlavor(Dish dish);
 }
