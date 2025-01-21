@@ -1,12 +1,14 @@
 package com.sky.mapper;
 
 import com.github.pagehelper.Page;
+import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.entity.Orders;
 import com.sky.vo.OrderVO;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Mapper
@@ -33,4 +35,14 @@ public interface OrderMapper {
     Orders getById(Long id);
 @Delete("delete from orders where id=#{id}")
     void deleteById(Long id);
+
+    List<Orders> getOrders(OrdersPageQueryDTO ordersPageQueryDTO);
+
+    Integer getCountByStatus(int a);
+    /*
+    根据订单状态和下单时间查询订单
+     */
+@Select("select * from orders where status=#{status} and order_time<#{time}")
+    List<Orders> getByStatusAndOrderTimeLT(Integer status, LocalDateTime time);
+
 }
