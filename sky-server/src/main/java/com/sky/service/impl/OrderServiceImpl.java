@@ -4,10 +4,9 @@ import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
+import com.sky.constant.StatusConstant;
 import com.sky.context.BaseContext;
-import com.sky.dto.OrdersPageQueryDTO;
-import com.sky.dto.OrdersPaymentDTO;
-import com.sky.dto.OrdersSubmitDTO;
+import com.sky.dto.*;
 import com.sky.entity.*;
 import com.sky.exception.AddressBookBusinessException;
 import com.sky.exception.OrderBusinessException;
@@ -16,6 +15,7 @@ import com.sky.result.PageResult;
 import com.sky.service.OrderService;
 import com.sky.utils.WeChatPayUtil;
 import com.sky.vo.OrderPaymentVO;
+import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderSubmitVO;
 import com.sky.vo.OrderVO;
 import lombok.extern.slf4j.Slf4j;
@@ -154,7 +154,6 @@ public class OrderServiceImpl implements OrderService {
         //获得订单
         List<OrderVO> orderVOS=new ArrayList<>();
         PageHelper.startPage(ordersPageQueryDTO.getPage(),ordersPageQueryDTO.getPageSize());
-
             List<Orders> orders = orderMapper.getByUserId(BaseContext.getCurrentId(), ordersPageQueryDTO.getStatus());
 
         long total = orders.size();
@@ -165,14 +164,14 @@ public class OrderServiceImpl implements OrderService {
             BeanUtils.copyProperties(order, orderVO);
             //获得订单内容
 
-            List<OrderDetail> orderDetailList=orderDetailMapper.getByOrderId(order.getId());
+            List<OrderDetail> orderDetailList = orderDetailMapper.getByOrderId(order.getId());
             //设置订单菜品详细信息
+            String dishName = "";
             for (OrderDetail orderDetail : orderDetailList) {
-                if (orderDetail.getDishId()!=null) {
-                    orderVO.setOrderDishes(orderDetail.getDishFlavor());
-                }
+                dishName += orderDetail.getName();
             }
-           orderVO.setOrderDetailList(orderDetailList);
+            orderVO.setOrderDishes(dishName);
+            orderVO.setOrderDetailList(orderDetailList);
             orderVOS.add(orderVO);
         }
 return new PageResult(total,orderVOS);
@@ -186,10 +185,13 @@ return new PageResult(total,orderVOS);
     @Override
     public OrderVO queryOrdersById(Long id) {
      Orders orders=orderMapper.getById(id);
+        AddressBook addressBook = addressBookMapper.getById(orders.getAddressBookId());
         OrderVO orderVO = new OrderVO();
+
         if (orders!=null) {
             BeanUtils.copyProperties(orders, orderVO);
         }
+        orderVO.setAddress(addressBook.getProvinceName()+addressBook.getCityName()+addressBook.getDistrictName()+addressBook.getDetail());
         List<OrderDetail> orderDetailList = orderDetailMapper.getByOrderId(id);
         orderVO.setOrderDetailList(orderDetailList);
         return orderVO;
@@ -222,5 +224,140 @@ return new PageResult(total,orderVOS);
             orderDetail.setOrderId(orders.getId());
         }
         orderDetailMapper.insertBatch(orderDetailList);
+    }
+    /**
+     * 订单查询
+     *
+     * @param ordersPageQueryDTO
+     * @return
+     */
+    @Override
+    public PageResult queryOrders(OrdersPageQueryDTO ordersPageQueryDTO) {
+        //获得订单
+        List<OrderVO> orderVOS=new ArrayList<>();
+        PageHelper.startPage(ordersPageQueryDTO.getPage(),ordersPageQueryDTO.getPageSize());
+        List<Orders> orders = orderMapper.getOrders(ordersPageQueryDTO);
+
+        long total = orders.size();
+        //配置返回值
+        for (Orders order : orders) {
+            OrderVO orderVO = new OrderVO();
+
+            BeanUtils.copyProperties(order, orderVO);
+            //获得订单内容
+
+            List<OrderDetail> orderDetailList=orderDetailMapper.getByOrderId(order.getId());
+            //设置订单菜品详细信息
+            String dishName="";
+            for (OrderDetail orderDetail : orderDetailList) {
+                    dishName+=orderDetail.getName();
+            }
+            orderVO.setOrderDishes(dishName);
+            orderVO.setOrderDetailList(orderDetailList);
+            //自行设置地址
+            AddressBook addressBook = addressBookMapper.getById(order.getAddressBookId());
+            orderVO.setAddress(addressBook.getProvinceName()+addressBook.getCityName()+addressBook.getDistrictName()+addressBook.getDetail());
+            orderVOS.add(orderVO);
+        }
+        return new PageResult(total,orderVOS);
+    }
+    /**
+     * 订单取消
+     *
+     * @param   ordersCancelDTO, id
+     * @return
+     */
+    @Override
+    public void cancelOrders(OrdersCancelDTO ordersCancelDTO) {
+        Orders orders = orderMapper.getById(ordersCancelDTO.getId());
+        orders.setRejectionReason(ordersCancelDTO.getCancelReason());
+        orders.setCancelTime(LocalDateTime.now());
+        orders.setStatus(6);
+        orderMapper.update(orders);
+    }
+
+    /**
+     * 各个状态的订单数量统计
+     *
+     * @param
+     * @return
+     */
+    @Override
+    public OrderStatisticsVO getAllStatusOrders() {
+        int a=2;
+        List<Integer> list=new ArrayList<>();
+        OrderStatisticsVO orderStatisticsVO = new OrderStatisticsVO();
+        for (;a<5;a++){
+            list.add(orderMapper.getCountByStatus(a));
+        }
+       orderStatisticsVO.setToBeConfirmed(list.get(0));
+        orderStatisticsVO.setConfirmed(list.get(1));
+        orderStatisticsVO.setDeliveryInProgress(list.get(2));
+        return orderStatisticsVO;
+    }
+    /**
+     * 完成订单
+     *
+     * @param   , id
+     * @return
+     */
+    @Override
+    public void completeOrders(Long id) {
+        Orders orders = orderMapper.getById(id);
+        orders.setStatus(6);
+        orderMapper.update(orders);
+    }
+    /**
+     * 拒单
+     *
+     * @param   , id
+     * @return
+     */
+    @Override
+    public void rejectOrders(OrdersRejectionDTO ordersRejectionDTO) {
+        Orders orders = orderMapper.getById(ordersRejectionDTO.getId());
+        orders.setRejectionReason(ordersRejectionDTO.getRejectionReason());
+        orders.setStatus(7);
+        orderMapper.update(orders);
+    }
+    /**
+     * 接单订单
+     *
+     * @param   , id
+     * @return
+     */
+    @Override
+    public void confirmOrders(OrdersConfirmDTO ordersConfirmDTO) {
+        Orders orders = orderMapper.getById(ordersConfirmDTO.getId());
+        ordersConfirmDTO.setStatus(3);
+        orders.setStatus(ordersConfirmDTO.getStatus());
+        orderMapper.update(orders);
+    }
+    /**
+     * 派送订单
+     *
+     * @param   , id
+     * @return
+     */
+    @Override
+    public void deliveryOrders(Long id) {
+        Orders orders = orderMapper.getById(id);
+        orders.setStatus(4);
+        orderMapper.update(orders);
+    }
+    /**
+     * 查询订单详情
+     *
+     * @param   , id
+     * @return
+     */
+    @Override
+    public OrderVO getOrderDetail(Long id) {
+        Orders orders = orderMapper.getById(id);
+        OrderVO orderVO = new OrderVO();
+        BeanUtils.copyProperties(orders, orderVO);
+        List<OrderDetail> orderDetailList = orderDetailMapper.getByOrderId(id);
+        orderVO.setOrderDetailList(orderDetailList);
+        return orderVO;
     }
 }

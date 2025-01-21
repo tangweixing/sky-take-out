@@ -1,6 +1,7 @@
 package com.sky.mapper;
 
 import com.github.pagehelper.Page;
+import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.entity.Orders;
 import com.sky.vo.OrderVO;
 import org.apache.ibatis.annotations.Delete;
@@ -33,4 +34,8 @@ public interface OrderMapper {
     Orders getById(Long id);
 @Delete("delete from orders where id=#{id}")
     void deleteById(Long id);
+
+    List<Orders> getOrders(OrdersPageQueryDTO ordersPageQueryDTO);
+
+    Integer getCountByStatus(int a);
 }
