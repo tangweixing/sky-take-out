@@ -317,7 +317,7 @@ return new PageResult(total,orderVOS);
     @Override
     public void completeOrders(Long id) {
         Orders orders = orderMapper.getById(id);
-        orders.setStatus(6);
+        orders.setStatus(5);
         orderMapper.update(orders);
     }
     /**
